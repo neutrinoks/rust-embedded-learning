@@ -1,0 +1,50 @@
+# Little helpers:
+# - to hide the command itself in the output, place '@' symbol before the command
+#   or list available tasks by defining it as: `just --list`
+# - for defaults in case of executing just `just` define: `default: taskx tasky`
+
+# Lists available tasks
+default:
+    just --list
+
+# Prints the ELF-header
+elfheader:
+    #!/usr/bin/env bash
+    cargo readobj --release --bin lm35-qemu -- --file-headers
+
+# Prints the ELF-Section-Header
+sectionheader:
+    #!/usr/bin/env bash
+    cargo readobj --release --bin lm35-qemu -- --section-headers
+
+# Prints the ELF-Program-Header
+programheader:
+    #!/usr/bin/env bash
+    cargo readobj --release --bin lm35-qemu -- --program-headers
+
+# Prints the sizes (total, ELF-sections, etc.)
+size:
+    #!/usr/bin/env bash
+    cargo size --release --bin lm35-qemu -- -A
+
+# Prints the compiled program in Assembly
+programhex:
+    #!/usr/bin/env bash
+    cargo objdump --bin lm35-qemu --release -- --disassemble --no-show-raw-insn --print-imm-hex
+
+# Runs the given 'binary' using the default QEMU machine
+debug binary="lm35-qemu":
+    #!/usr/bin/env bash
+    qemu-system-arm \
+      -cpu cortex-m3 \
+      -machine lm3s6965evb \
+      -nographic \
+      -semihosting-config enable=on,target=native \
+      -gdb tcp::3333 \
+      -S \
+      -kernel target/thumbv7m-none-eabi/debug/{{binary}}
+
+# Runs the gdb debugger with the given 'binary' target
+debugger binary="lm35-qemu":
+    #!/usr/bin/env bash
+    arm-none-eabi-gdb -q target/thumbv7m-none-eabi/debug/{{binary}}
